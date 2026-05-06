@@ -78,6 +78,14 @@ services:
         # value: https://api.nucleus.watertontech.com
         # Until then, leave blank — Paperclip auto-derives from request host.
         sync: false
+      # ↓ Required when DEPLOYMENT_MODE=authenticated + EXPOSURE=public.
+      # Paperclip refuses to start without these (server/src/index.ts:464).
+      # Update both when the custom domain `api.nucleus.watertontech.com` is wired.
+      - key: PAPERCLIP_AUTH_BASE_URL_MODE
+        value: explicit
+      - key: PAPERCLIP_AUTH_PUBLIC_BASE_URL
+        # Initially the Render *.onrender.com URL; switch to custom domain later.
+        sync: false
 
       # Postgres: pulled from the database resource above
       - key: DATABASE_URL
