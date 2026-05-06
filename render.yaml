@@ -8,17 +8,21 @@
 #   - 1 web service (Docker, runs Paperclip server)
 #   - 1 Postgres database
 #   - 1 persistent disk attached to the web service
-# Total monthly cost: ~$16.50 (Starter web + Starter postgres + 10GB disk).
+#
+# Model auth: Claude Code subscription OAuth (transplanted from the user's
+# local Keychain). The Render dashboard has a "Secret Files" section —
+# upload the user's `.credentials.json` there with mount path:
+#     /paperclip/.claude/.credentials.json
+# Claude Code (bundled in the Paperclip image) finds it via $HOME=/paperclip.
+#
+# ⚠ ToS NOTE: Anthropic's 2026-02-19 ToS update prohibits Pro/Max OAuth
+# tokens in third-party products. Account ban risk if detected. Refresh
+# token also expires periodically and must be re-extracted manually.
 #
 # Secrets you must set in the Render dashboard AFTER first apply
 # (these are `sync: false` so the blueprint apply doesn't touch them):
 #   - PAPERCLIP_SECRETS_MASTER_KEY (generate: openssl rand -hex 32)
-#   - AWS_ACCESS_KEY_ID            (IAM user with `bedrock:InvokeModel` perm)
-#   - AWS_SECRET_ACCESS_KEY        (paired with the above)
-#
-# Model auth: Claude via AWS Bedrock (commercially licensed). Set
-# CLAUDE_CODE_USE_BEDROCK=1 below; Claude Code (bundled into the
-# Paperclip image) routes through Bedrock instead of Anthropic OAuth.
+# Plus the credentials Secret File described above.
 #
 # Reference: https://render.com/docs/blueprint-spec
 
@@ -81,25 +85,15 @@ services:
           name: paperclip-db
           property: connectionString
 
-      # --- Model auth: Claude via AWS Bedrock ---------------------------
-      # Flips Claude Code (bundled in the Paperclip image) to Bedrock mode
-      - key: CLAUDE_CODE_USE_BEDROCK
-        value: "1"
-      - key: AWS_REGION
-        value: us-east-1   # change to whichever Bedrock region has your model access
-      - key: ANTHROPIC_MODEL
-        # e.g. cross-region inference profile for Claude:
-        #   us.anthropic.claude-opus-4-7-20260301-v1:0
-        # Pick the model you've requested access to in the Bedrock console.
-        sync: false
+      # --- Model auth: Claude Code subscription OAuth -------------------
+      # No env vars needed for auth here. Upload the user's local
+      # ~/.claude/.credentials.json as a Render "Secret File" with
+      # mount path /paperclip/.claude/.credentials.json. Claude Code finds
+      # it via $HOME=/paperclip (set by the Paperclip Dockerfile).
       # -------------------------------------------------------------------
 
       # Secrets — set values in Render dashboard, never commit
       - key: PAPERCLIP_SECRETS_MASTER_KEY
-        sync: false
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
         sync: false
 
       # Optional: tighter session security on a public deployment
