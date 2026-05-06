@@ -11,10 +11,14 @@
 # Total monthly cost: ~$16.50 (Starter web + Starter postgres + 10GB disk).
 #
 # Secrets you must set in the Render dashboard AFTER first apply
-# (mark as `sync: false` so blueprint apply doesn't overwrite them):
-#   - ANTHROPIC_API_KEY
-#   - OPENAI_API_KEY (optional, only if you use the Codex adapter)
+# (these are `sync: false` so the blueprint apply doesn't touch them):
 #   - PAPERCLIP_SECRETS_MASTER_KEY (generate: openssl rand -hex 32)
+#   - AWS_ACCESS_KEY_ID            (IAM user with `bedrock:InvokeModel` perm)
+#   - AWS_SECRET_ACCESS_KEY        (paired with the above)
+#
+# Model auth: Claude via AWS Bedrock (commercially licensed). Set
+# CLAUDE_CODE_USE_BEDROCK=1 below; Claude Code (bundled into the
+# Paperclip image) routes through Bedrock instead of Anthropic OAuth.
 #
 # Reference: https://render.com/docs/blueprint-spec
 
@@ -70,12 +74,25 @@ services:
           name: paperclip-db
           property: connectionString
 
+      # --- Model auth: Claude via AWS Bedrock ---------------------------
+      # Flips Claude Code (bundled in the Paperclip image) to Bedrock mode
+      - key: CLAUDE_CODE_USE_BEDROCK
+        value: "1"
+      - key: AWS_REGION
+        value: us-east-1   # change to whichever Bedrock region has your model access
+      - key: ANTHROPIC_MODEL
+        # e.g. cross-region inference profile for Claude:
+        #   us.anthropic.claude-opus-4-7-20260301-v1:0
+        # Pick the model you've requested access to in the Bedrock console.
+        sync: false
+      # -------------------------------------------------------------------
+
       # Secrets — set values in Render dashboard, never commit
       - key: PAPERCLIP_SECRETS_MASTER_KEY
         sync: false
-      - key: ANTHROPIC_API_KEY
+      - key: AWS_ACCESS_KEY_ID
         sync: false
-      - key: OPENAI_API_KEY
+      - key: AWS_SECRET_ACCESS_KEY
         sync: false
 
       # Optional: tighter session security on a public deployment
