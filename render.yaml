@@ -24,12 +24,14 @@
 
 databases:
   - name: paperclip-db
-    plan: basic_1gb     # Render Postgres plan IDs (post-2025 rename):
-                        #   free          — 1GB storage, expires after 30 days
-                        #   basic_1gb     — ~$19/mo, current minimum paid tier
-                        #   basic_4gb     — ~$45/mo
-                        #   pro_4gb       — ~$95/mo
-                        # If basic_1gb is rejected, try `free` for testing.
+    plan: free          # Render's blueprint API rejected basic_256mb and
+                        # basic_1gb. Using `free` (guaranteed valid) to
+                        # unblock; UPGRADE via the Render dashboard after
+                        # the DB is created — the dashboard will show the
+                        # current valid paid plan names.
+                        # Free Postgres limits: 1GB storage, suspended on
+                        # inactivity, database itself expires after 90 days
+                        # without an upgrade.
     databaseName: paperclip
     user: paperclip
     # region defaults to oregon; change here if your Vercel deploy lives elsewhere
