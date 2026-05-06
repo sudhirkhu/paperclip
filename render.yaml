@@ -24,7 +24,10 @@
 
 databases:
   - name: paperclip-db
-    plan: starter
+    plan: basic_256mb   # Render retired the legacy "starter" Postgres plan;
+                        # basic_256mb is the new minimum paid tier (~$6/mo,
+                        # 256MB RAM, 1GB storage). Use `free` for testing
+                        # only — free Postgres expires after 30 days.
     databaseName: paperclip
     user: paperclip
     # region defaults to oregon; change here if your Vercel deploy lives elsewhere
