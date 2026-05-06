@@ -103,6 +103,10 @@ services:
       # Secrets — set values in Render dashboard, never commit
       - key: PAPERCLIP_SECRETS_MASTER_KEY
         sync: false
+      # Better Auth signing secret — required by Paperclip's auth bootstrap
+      # (server/src/auth/better-auth.ts:97). Generate: openssl rand -hex 32
+      - key: BETTER_AUTH_SECRET
+        sync: false
 
       # Optional: tighter session security on a public deployment
       - key: PAPERCLIP_SECRETS_STRICT_MODE
