@@ -1,0 +1,83 @@
+# Render blueprint for Paperclip
+#
+# Drop this file at the ROOT of your Paperclip fork (sudhirkhu/paperclip)
+# as `render.yaml`, then in Render dashboard:
+#   New → Blueprint → connect the fork → Apply
+#
+# Render reads this and provisions:
+#   - 1 web service (Docker, runs Paperclip server)
+#   - 1 Postgres database
+#   - 1 persistent disk attached to the web service
+# Total monthly cost: ~$16.50 (Starter web + Starter postgres + 10GB disk).
+#
+# Secrets you must set in the Render dashboard AFTER first apply
+# (mark as `sync: false` so blueprint apply doesn't overwrite them):
+#   - ANTHROPIC_API_KEY
+#   - OPENAI_API_KEY (optional, only if you use the Codex adapter)
+#   - PAPERCLIP_SECRETS_MASTER_KEY (generate: openssl rand -hex 32)
+#
+# Reference: https://render.com/docs/blueprint-spec
+
+databases:
+  - name: paperclip-db
+    plan: starter
+    databaseName: paperclip
+    user: paperclip
+    # region defaults to oregon; change here if your Vercel deploy lives elsewhere
+
+services:
+  - type: web
+    name: paperclip
+    runtime: docker
+    plan: starter
+    region: oregon
+    branch: master
+    autoDeploy: true
+    # Uses the Dockerfile at the repo root
+    dockerfilePath: ./Dockerfile
+
+    healthCheckPath: /api/health
+
+    disk:
+      name: paperclip-data
+      mountPath: /paperclip
+      sizeGB: 10
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: "3100"
+      - key: PAPERCLIP_HOME
+        value: /paperclip
+      - key: PAPERCLIP_INSTANCE_ID
+        value: default
+      - key: PAPERCLIP_DEPLOYMENT_MODE
+        value: authenticated
+      - key: PAPERCLIP_DEPLOYMENT_EXPOSURE
+        value: public
+      - key: PAPERCLIP_API_URL
+        # Set after custom domain is wired:
+        # value: https://api.nucleus.watertontech.com
+        # Until then, leave blank — Paperclip auto-derives from request host.
+        sync: false
+
+      # Postgres: pulled from the database resource above
+      - key: DATABASE_URL
+        fromDatabase:
+          name: paperclip-db
+          property: connectionString
+
+      # Secrets — set values in Render dashboard, never commit
+      - key: PAPERCLIP_SECRETS_MASTER_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+
+      # Optional: tighter session security on a public deployment
+      - key: PAPERCLIP_SECRETS_STRICT_MODE
+        value: "true"
